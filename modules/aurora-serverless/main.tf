@@ -85,7 +85,11 @@ resource "null_resource" "lambda_package" {
   }
 
   provisioner "local-exec" {
-    command = "chmod +x ${path.module}/lambda/package.sh && ${path.module}/lambda/package.sh"
+    command = <<EOT
+      cd ${path.module}/lambda && \
+      npm install --production && \
+      zip -r db_users.zip node_modules index.js
+    EOT
   }
 }
 
@@ -93,8 +97,8 @@ resource "aws_lambda_function" "db_users_lambda" {
   filename      = "${path.module}/lambda/db_users.zip"
   function_name = "${var.name_prefix}-db-users-lambda"
   role          = aws_iam_role.lambda_role.arn
-  handler       = "db_users.handler"
-  runtime       = "python3.8"
+  handler       = "index.handler"
+  runtime       = "nodejs18.x"
   timeout       = 60
 
   environment {

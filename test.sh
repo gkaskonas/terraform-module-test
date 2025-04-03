@@ -5,4 +5,4 @@ export AWS_DEFAULT_REGION=us-east-1
 cd examples/basic-usage
 tflocal init
 tflocal apply -auto-approve
-tflocal output
+tflocal output -json

@@ -1,4 +1,4 @@
-**/package/**/*
+**/node_modules/**/*
 **/.terraform
 **/terraform.lock.hcl
 **/terraform.*
