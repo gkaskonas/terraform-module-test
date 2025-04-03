@@ -1,59 +1,66 @@
-# Aurora Serverless (v1) Terraform Module
+# Aurora Serverless Terraform Module
 
-Deploy and manage production-grade Aurora Serverless clusters with automated user management and security best practices.
+Supports both **v1** and **v2** with unified interface.
 
 ## Features
-- 🛡️ **Security**: KMS encryption, IAM least privilege, random credentials
-- ⚡ **Serverless**: Auto-scaling from 0.5 to 256 ACUs
-- 🔄 **Automation**: Idempotent user management via Lambda
-- 📦 **Modular**: Reusable across environments
-- 🔍 **Observable**: CloudWatch logging and outputs
+- 🛡️ **Security**: KMS encryption, IAM least privilege
+- ⚡ **Serverless**: v1 (0.5-256 ACU) and v2 (0.5-128 ACU)
+- 🔄 **Automation**: User management via Lambda
+- 📦 **Multi-AZ**: Built-in for v2 deployments
 
 ## Usage
 ```hcl
-module "prod_db" {
-  source = "github.com/your-org/terraform-aws-aurora-serverless?ref=v2.1.0"
+module "db" {
+  source = "github.com/your-org/terraform-aws-aurora-serverless?ref=v3.0.0"
 
   # Required
   name_prefix        = "prod-core"
   aws_region         = "us-west-2"
   engine_name        = "aurora-postgresql" # aurora-mysql
+  serverless_version = "v2"                # v1 or v2
   database_name      = "orders_db"
   vpc_id             = "vpc-09876"
   subnet_ids         = ["subnet-123", "subnet-456"]
   
-  # Optional
-  allowed_cidr_blocks = ["10.1.0.0/16"]
-  master_username    = "db_admin"
-  max_capacity       = 32
-  min_capacity       = 2
-  storage_encrypted  = true
-  kms_key_id         = "arn:aws:kms:us-west-2:123456789012:key/abcd1234"
-}
+  # Version-specific
+  engine_version     = var.serverless_version == "v2" ? "13.6" : null
+  min_capacity       = var.serverless_version == "v2" ? 0.5 : 1
+  max_capacity       = var.serverless_version == "v2" ? 64 : 32
 
-output "db_connection" {
-  value = "psql -h ${module.prod_db.aurora_cluster_endpoint} -U db_admin -d orders_db"
-  sensitive = true
+  # Common
+  storage_encrypted  = true
 }
 ```
 
-## Inputs
+## Version Comparison
+| Feature                | v1                      | v2                      |
+|------------------------|-------------------------|-------------------------|
+| **Engine Mode**        | `serverless`            | `provisioned`           |
+| **Min Capacity**       | 1 ACU                   | 0.5 ACU                 |
+| **Max Capacity**       | 256 ACU                 | 128 ACU                 |
+| **Auto Pause**         | Supported               | Not Available           |
+| **Multi-AZ**           | No                      | Yes                     |
 
-| Name | Description | Type | Default |
-|------|-------------|------|---------|
-| `name_prefix` | Resource prefix | string | Required |
-| `engine_name` | `aurora-postgresql` or `aurora-mysql` | string | Required |
-| `database_name` | Initial database name | string | Required |
-| `vpc_id` | Target VPC ID | string | Required |
-| `subnet_ids` | Subnets for DB group | list(string) | Required |
-| `allowed_cidr_blocks` | Allowed IP ranges | list(string) | `["10.0.0.0/16"]` |
-| `master_username` | Admin username | string | `"admin"` |
-| `auto_pause` | Enable auto-pause | bool | `true` |
-| `max_capacity` | Max ACUs (0.5-256) | number | `16` |
-| `min_capacity` | Min ACUs (0.5-256) | number | `1` |
-| `seconds_until_auto_pause` | Inactivity timeout | number | `300` |
-| `storage_encrypted` | Enable encryption | bool | `true` |
-| `kms_key_id` | Custom KMS key ARN | string | `null` |
+## Inputs
+```hcl
+variable "serverless_version" {
+  description = "v1 or v2"
+  type        = string
+  default     = "v2"
+  validation {
+    condition     = contains(["v1", "v2"], var.serverless_version)
+    error_message = "Valid values: v1, v2"
+  }
+}
+
+variable "engine_version" {
+  description = "Required for v2 (e.g., '13.6')"
+  type        = string
+  default     = null
+}
+```
+
+Full documentation: [AWS Aurora Serverless v2](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless-v2.html)
 
 ## Outputs
 
@@ -104,6 +111,55 @@ awslocal logs tail /aws/lambda/${module.aurora.lambda_function_name}
 # Manual user creation
 awslocal rds-data execute-statement --resource-arn $CLUSTER_ARN --database $DB_NAME --sql "CREATE USER ..."
 ```
+
+## Production Readiness
+
+### ✅ Implemented
+- **Security Fundamentals**
+  - KMS encryption at rest
+  - IAM role with least privilege
+  - Random password generation
+  - Security group lockdown
+- **Operational Essentials**
+  - Idempotent user management
+  - Basic CloudWatch logging
+  - Cross-version support (v1/v2)
+  - Sensitive output handling
+
+### 🚧 Roadmap
+- **Backup & Recovery**
+  - [ ] Automated snapshot exports to S3
+  - [ ] Point-in-time recovery configuration
+  - [ ] Cross-region replication
+- **Monitoring**
+  - [ ] Enhanced CloudWatch metrics
+  - [ ] Performance Insights integration
+  - [ ] Anomaly detection
+- **Hardening**
+  - [ ] Parameter groups customization
+  - [ ] Maintenance windows
+  - [ ] Automated failover testing
+
+### 🔧 Quick Wins
+```hcl
+# Enable performance insights
+resource "aws_rds_cluster" "aurora_serverless" {
+  # ... existing config ...
+  enable_performance_insights = true
+  performance_insights_retention_period = 7
+}
+
+# Add deletion protection
+deletion_protection = var.production
+```
+
+### ▶️ Next Steps
+1. Implement automated drift detection
+2. Add load-based auto-scaling policies
+3. Integrate with Secrets Manager rotation
+4. Set up VPC endpoints for private access
+
+[Production Checklist](.github/CHECKLIST.md) | [Security Policy](SECURITY.md)
 
 ## Architecture
 
