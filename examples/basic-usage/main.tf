@@ -68,6 +68,8 @@ module "test_aurora" {
   skip_final_snapshot      = true
   max_capacity             = 8
   min_capacity             = 2
+  storage_encrypted        = true
+  kms_key_id               = null  # Uses default RDS KMS key
 }
 
 output "test_vpc_id" {

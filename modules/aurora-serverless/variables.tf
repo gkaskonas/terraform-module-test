@@ -104,4 +104,16 @@ variable "tags" {
   description = "A map of tags to add to all resources"
   type        = map(string)
   default     = {}
+}
+
+variable "storage_encrypted" {
+  description = "Specifies whether the DB cluster is encrypted"
+  type        = bool
+  default     = true
+}
+
+variable "kms_key_id" {
+  description = "The ARN for the KMS encryption key. When specifying kms_key_id, storage_encrypted needs to be set to true"
+  type        = string
+  default     = null
 } 

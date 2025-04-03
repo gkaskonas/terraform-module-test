@@ -75,6 +75,9 @@ resource "aws_rds_cluster" "aurora_serverless" {
     timeout_action           = var.timeout_action
   }
 
+  storage_encrypted = var.storage_encrypted
+  kms_key_id        = var.storage_encrypted ? (var.kms_key_id != null ? var.kms_key_id : "arn:aws:kms:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:alias/aws/rds") : null
+
   tags = var.tags
 }
 
@@ -105,7 +108,7 @@ resource "aws_lambda_function" "db_users_lambda" {
     variables = {
       DB_CLUSTER_ENDPOINT = aws_rds_cluster.aurora_serverless.endpoint
       DB_NAME             = var.database_name
-      DB_PORT             = var.engine_name == "aurora-postgresql" ? "4510" : "4510"
+      DB_PORT             = var.engine_name == "aurora-postgresql" ? "5432" : "3306"
       DB_MASTER_USERNAME  = var.master_username
       DB_MASTER_PASSWORD  = random_password.db_master_pass.result
       DB_ENGINE           = var.engine_name
@@ -194,4 +197,7 @@ resource "null_resource" "invoke_lambda" {
 
   depends_on = [aws_lambda_function.db_users_lambda]
 }
+
+data "aws_region" "current" {}
+data "aws_caller_identity" "current" {}
 
