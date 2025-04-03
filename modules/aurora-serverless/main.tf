@@ -161,19 +161,17 @@ resource "aws_iam_policy" "lambda_policy" {
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
           "logs:PutLogEvents"
-        ]
-        Effect   = "Allow"
-        Resource = "arn:aws:logs:*:*:*"
+        ],
+        Effect   = "Allow",
+        Resource = "*"
       },
       {
         Action = [
-          "rds:*",
-          "ec2:CreateNetworkInterface",
-          "ec2:DescribeNetworkInterfaces",
-          "ec2:DeleteNetworkInterface"
-        ]
-        Effect   = "Allow"
-        Resource = "*"
+          "rds:DescribeDBClusters",
+          "rds:DescribeDBInstances"
+        ],
+        Effect   = "Allow",
+        Resource = aws_rds_cluster.aurora_serverless.arn
       }
     ]
   })
