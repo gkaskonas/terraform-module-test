@@ -116,4 +116,20 @@ variable "kms_key_id" {
   description = "The ARN for the KMS encryption key. When specifying kms_key_id, storage_encrypted needs to be set to true"
   type        = string
   default     = null
+}
+
+variable "serverless_version" {
+  description = "Aurora Serverless version (v1 or v2)"
+  type        = string
+  default     = "v2"
+  validation {
+    condition     = contains(["v1", "v2"], var.serverless_version)
+    error_message = "Valid values: v1, v2"
+  }
+}
+
+variable "engine_version" {
+  description = "Database engine version"
+  type        = string
+  default     = null # Let AWS choose compatible version
 } 

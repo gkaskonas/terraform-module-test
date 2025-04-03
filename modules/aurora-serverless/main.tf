@@ -56,7 +56,8 @@ resource "aws_db_subnet_group" "aurora" {
 resource "aws_rds_cluster" "aurora_serverless" {
   cluster_identifier      = "${var.name_prefix}-cluster"
   engine                  = var.engine_name
-  engine_mode             = "serverless"
+  engine_mode             = var.serverless_version == "v2" ? "provisioned" : "serverless"
+  engine_version          = var.engine_version
   database_name           = var.database_name
   master_username         = var.master_username
   master_password         = random_password.db_master_pass.result
@@ -67,12 +68,20 @@ resource "aws_rds_cluster" "aurora_serverless" {
   db_subnet_group_name    = aws_db_subnet_group.aurora.name
   vpc_security_group_ids  = [aws_security_group.aurora_sg.id]
   
-  scaling_configuration {
-    auto_pause               = var.auto_pause
-    max_capacity             = var.max_capacity
-    min_capacity             = var.min_capacity
-    seconds_until_auto_pause = var.seconds_until_auto_pause
-    timeout_action           = var.timeout_action
+  dynamic "scaling_configuration" {
+    for_each = var.serverless_version == "v1" ? [1] : []
+    content {
+      auto_pause               = var.auto_pause
+      max_capacity             = var.max_capacity
+      min_capacity             = var.min_capacity
+      seconds_until_auto_pause = var.seconds_until_auto_pause
+      timeout_action           = var.timeout_action
+    }
+  }
+
+  serverlessv2_scaling_configuration {
+    min_capacity = var.min_capacity
+    max_capacity = var.max_capacity
   }
 
   storage_encrypted = var.storage_encrypted

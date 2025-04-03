@@ -70,6 +70,8 @@ module "test_aurora" {
   min_capacity             = 2
   storage_encrypted        = true
   kms_key_id               = null  # Uses default RDS KMS key
+  
+  serverless_version = "v2"
 }
 
 output "test_vpc_id" {
