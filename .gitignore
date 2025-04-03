@@ -1,0 +1,8 @@
+**/package/**/*
+**/.terraform
+**/terraform.lock.hcl
+**/terraform.*
+**/.terraform.*
+localenv/**/*
+.DS_STORE
+**/*.zip
